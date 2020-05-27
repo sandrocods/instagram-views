@@ -3,8 +3,20 @@ include 'class_view.php';
 $banner = banner();
 echo "\n\n";
 $u = getUsername();
-$p = getPassword();
-$login = login($u, $p);
+if(file_exists( __DIR__."/sesi/".$u.".json")){
+    echo "[!] Saved cookie found! Use cookie mode.\n";
+    $logvia = "cookie";
+    $saved_cookie = __DIR__."/sesi/".$u.".json";
+    $read_cookie = file_get_contents($saved_cookie);
+    $json_cookie = json_decode($read_cookie);
+    $login = login($json_cookie->csrftoken, $json_cookie->sessionid, "cookie");
+} else {
+    echo "[!] No cookie saved! Use normal mode.\n";
+    $logvia = "normal";
+    $p = getPassword();
+    $login = login($u, $p);
+}
+
 
 echo "[?] Enter Username Target: ( Multiple use | without @ symbol ) : ";
 $username_tar = trim(fgets(STDIN));
@@ -14,12 +26,31 @@ echo "[?] Enter Sleep second(s) : ";
 $sleep = trim(fgets(STDIN));
 
 if ($login['status'] == 'success') {
-    echo "\n[*] Login as ".$login['username']." Success !\n\n";
-    $data_login = array(
-        'username' => $login['username'],
-        'csrftoken'	=> $login['csrftoken'],
-        'sessionid'	=> $login['sessionid']
-    );
+    if($logvia == "normal"){
+        echo "\n[*] Login as ".$login['username']." Success !\n\n";
+        $data_login = array(
+            'username' => $login['username'],
+            'csrftoken'	=> $login['csrftoken'],
+            'sessionid'	=> $login['sessionid']
+        );
+    } else {
+        echo "[!] Checking session.\n";
+        $cekSesi = cekSesi($u, $login['csrftoken'], $login['sessionid']);
+        echo "Sesi : ".$cekSesi."\n";
+        if($cekSesi == "live"){
+            echo "\n[*] Login as ".$u." Success !\n\n";
+            $data_login = array(
+                'username' => $u,
+                'csrftoken'	=> $login['csrftoken'],
+                'sessionid'	=> $login['sessionid']
+            );
+        } else {
+            echo "\n[*] Login as ".$u." Failed, session die !\n";
+            echo "\n[*] Relogin please !\n\n";
+            unlink($saved_cookie);
+            exit();
+        }
+    }
     foreach ($pecah as $username_target) {
         $berhasil = 0;
             $search_target = findProfile($username_target, $data_login);
