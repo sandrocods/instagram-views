@@ -58,6 +58,24 @@ function curlNoHeader($url, $data = 0, $header = 0, $cookie = 0) {
     curl_close($ch);
     return $x;
 }
+
+function cekSesi($user, $csrf, $session){
+    $url_view = 'https://www.instagram.com/'.$user.'/?__a=1';
+    $header = array(
+        'User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 11_0_1 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A402 Safari/604.1',
+        'X-CSRFToken: '.$csrf,
+        'Cookie: csrftoken='.$csrf.'; sessionid='.$session
+    );
+    $curl = curlNoHeader($url_view, false, $header);
+    $json = json_decode($curl);
+    //if(is_null($json->graphql->user->restricted_by_viewer)){
+    if($json->graphql->user->restricted_by_viewer === false){
+        return 'live';
+    } else {
+        return 'die';
+    }
+}
+
 function getPassword($prompt = "[?] Enter Password: ") {
 
     echo $prompt;
@@ -144,8 +162,20 @@ function findProfile($username, $session = 0)
 
     return $data;
 }
-function login($username, $password)
+function login($username, $password, $type = false)
 {
+    if($type == "cookie"){
+        $data = array(
+            'action' => 'login',
+            'status' => 'success',
+            'username' => $username,
+            'csrftoken' => $username,
+            'sessionid' => $password,
+        );
+        return $data;
+        exit();
+    }
+
     $url_login = 'https://www.instagram.com/accounts/login/ajax/';
     $url_ig = 'https://www.instagram.com/accounts/login/';
 
@@ -184,6 +214,10 @@ function login($username, $password)
             'csrftoken' => $cookie_log['csrftoken'],
             'sessionid' => $cookie_log['sessionid'],
         );
+        $myfile = fopen( __DIR__."/sesi/".$username.".json", "w") or die("Unable to open file!");
+        $txt = json_encode(['csrftoken' => $cookie_log['csrftoken'], 'sessionid' => $cookie_log['sessionid']]);
+        fwrite($myfile, $txt);
+        fclose($myfile);
 
     }else{
 
@@ -229,6 +263,6 @@ function view_story($login,$reelMediaId,$reelMediaOwnerId,$reelId,$reelMediaTake
 }
 
 function banner(){
-    $str = "ICAgIF9fXyBfICBfIF9fXyBfX19fXyBfICAgX19fIF9fXyAgICBfICAgX18gIF9fIA0KICAgfF8gX3wgXHwgLyBfX3xfICAgXy9fXCAvIF9ffCBfIFwgIC9fXCB8ICBcLyAgfA0KICAgIHwgfHwgLmAgXF9fIFwgfCB8LyBfIFwgKF8gfCAgIC8gLyBfIFx8IHxcL3wgfA0KICAgfF9fX3xffFxffF9fXy8gfF8vXy8gXF9cX19ffF98X1wvXy8gXF9cX3wgIHxffA0KQXV0byBWaWV3cyBTdG9yaWVzIFRhcmdldCB2MSB8IENvZGUgYnkgc2FuZHJvLnB1dHJhYSA=";
+    $str = "ICAgIF9fXyBfICBfIF9fXyBfX19fXyBfICAgX19fIF9fXyAgICBfICAgX18gIF9fIAogICB8XyBffCBcfCAvIF9ffF8gICBfL19cIC8gX198IF8gXCAgL19cIHwgIFwvICB8CiAgICB8IHx8IC5gIFxfXyBcIHwgfC8gXyBcIChfIHwgICAvIC8gXyBcfCB8XC98IHwKICAgfF9fX3xffFxffF9fXy8gfF8vXy8gXF9cX19ffF98X1wvXy8gXF9cX3wgIHxffApBdXRvIFZpZXdzIFN0b3JpZXMgVGFyZ2V0IHYxIHwgQ29kZSBieSBzYW5kcm8ucHV0cmFhIAogICAgICAgUmVjb2RlIGJ5IERhbmR5LCBhZGRlZCBzZXNzaW9uIHN0b3Jl";
     return print_r(base64_decode($str));
 }
