@@ -36,7 +36,6 @@ if ($login['status'] == 'success') {
     } else {
         echo "[!] Checking session.\n";
         $cekSesi = cekSesi($u, $login['csrftoken'], $login['sessionid']);
-        echo "Sesi : ".$cekSesi."\n";
         if($cekSesi == "live"){
             echo "\n[*] Login as ".$u." Success !\n\n";
             $data_login = array(
